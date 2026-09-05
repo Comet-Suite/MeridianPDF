@@ -2414,54 +2414,29 @@ function openPrintDialog(presetFrom, presetTo){
   overlay.className = 'app-modal fixed inset-0 z-[100] flex items-center justify-center px-4';
   overlay.style.background = 'rgba(0,0,0,.45)';
   overlay.innerHTML = `
-    <div class="glass rounded-2xl p-5 w-full max-w-[380px] shadow-2xl fade-enter" style="max-height:88vh;overflow-y:auto;">
-      <div class="font-bold text-[15px] mb-3">Print Document</div>
+    <div class="glass rounded-2xl p-5 w-full max-w-[400px] shadow-2xl fade-enter" style="max-height:90vh;overflow-y:auto;">
+      <div class="font-bold text-[15px]">Print</div>
+      <div class="text-[11.5px] opacity-50 mb-3 truncate">${escapeHtml(currentFileName || 'document.pdf')} · ${numPages} page${numPages>1?'s':''}</div>
 
-      <div class="text-[12px] font-semibold opacity-50 mb-1.5">PRINT METHOD</div>
-      <div class="print-method-list mb-3">
-        <button class="print-method-card selected" data-method="inapp">
-          <div class="pm-icon">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
-          </div>
-          <div class="pm-body">
-            <div class="pm-title">Print from this app</div>
-            <div class="pm-sub">Applies the page range, paper, colour &amp; annotation settings below.</div>
-          </div>
-          <div class="pm-check"></div>
-        </button>
-        <button class="print-method-card" data-method="browser">
-          <div class="pm-icon">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 010 18M12 3a15 15 0 000 18"/></svg>
-          </div>
-          <div class="pm-body">
-            <div class="pm-title">Open in my browser</div>
-            <div class="pm-sub">Opens the original PDF in your PC's default browser and prints from there.</div>
-          </div>
-          <div class="pm-check"></div>
-        </button>
+      <div class="print-live-preview mb-4">
+        <canvas id="printPreviewCanvas"></canvas>
+        <div class="plp-caption" id="printPreviewCaption">Preview</div>
       </div>
-      <div id="printMethodNote" class="text-[11px] opacity-45 mb-4 leading-snug">Uses this dialog's settings, then hands off to your system's native print dialog.</div>
 
-      <div id="printRangeSection">
-      <div class="text-[12px] font-semibold opacity-50 mb-1">PAGE RANGE</div>
-      <div class="flex items-center gap-2 mb-1">
-        <input id="printFrom" type="text" inputmode="numeric" value="${presetFrom||1}" class="w-16 text-center rounded-md bg-black/5 dark:bg-white/10 outline-none py-1.5 text-[13px]">
-        <span class="opacity-50 text-[13px]">to</span>
-        <input id="printTo" type="text" inputmode="numeric" value="${presetTo||numPages}" class="w-16 text-center rounded-md bg-black/5 dark:bg-white/10 outline-none py-1.5 text-[13px]">
-        <span class="opacity-40 text-[12px]">of ${numPages}</span>
+      <div class="text-[12px] font-semibold opacity-50 mb-1">PAGES</div>
+      <div class="flex gap-2 mb-2">
+        <button class="pill-btn !text-[12px] flex-1 print-scope" data-scope="all">All</button>
+        <button class="pill-btn secondary !text-[12px] flex-1 print-scope" data-scope="current">Current</button>
+        <button class="pill-btn secondary !text-[12px] flex-1 print-scope" data-scope="custom">Custom</button>
       </div>
+      <input id="printRangeInput" class="hidden w-full rounded-md bg-black/5 dark:bg-white/10 outline-none py-1.5 px-2 text-[13px] mb-1" placeholder="e.g. 1-3, 7, 10-12" inputmode="numeric" autocomplete="off">
       <div id="printRangeError" class="field-error"></div>
-
-      <div id="printDeviceSection" class="hidden">
-        <div class="text-[12px] font-semibold opacity-50 mb-1.5">DEVICE</div>
-        <select id="printDeviceSelect" class="w-full text-[13px] rounded-md bg-black/5 dark:bg-white/10 outline-none py-2 px-2 mb-4">
-          <option value="">System default (choose in next dialog)</option>
-        </select>
-      </div>
+      <div id="printRangeReadout" class="text-[11.5px] opacity-50 mb-1"></div>
+      <div id="printLongNote" class="hidden text-[11px] opacity-45 mb-1 leading-snug">Long jobs render in the background — you can cancel any time.</div>
 
       <div class="text-[12px] font-semibold opacity-50 mb-1.5">PAPER SIZE</div>
       <div class="flex gap-2 mb-4">
-        <button class="pill-btn !text-[12px] flex-1 print-paper" data-size="fit">Fit to page</button>
+        <button class="pill-btn !text-[12px] flex-1 print-paper" data-size="fit">Fit</button>
         <button class="pill-btn secondary !text-[12px] flex-1 print-paper" data-size="a4">A4</button>
         <button class="pill-btn secondary !text-[12px] flex-1 print-paper" data-size="letter">Letter</button>
         <button class="pill-btn secondary !text-[12px] flex-1 print-paper" data-size="legal">Legal</button>
@@ -2480,26 +2455,27 @@ function openPrintDialog(presetFrom, presetTo){
         <button class="pill-btn secondary !text-[12px] flex-1 print-color" data-color="grayscale">Grayscale</button>
       </div>
 
-      <div class="text-[12px] font-semibold opacity-50 mb-1.5">QUALITY</div>
-      <div class="flex gap-2 mb-4">
-        <button class="pill-btn secondary !text-[12px] flex-1 print-q" data-q="1.5">Standard</button>
-        <button class="pill-btn !text-[12px] flex-1 print-q" data-q="2.5">High</button>
-      </div>
-      <label class="flex items-center gap-2 text-[13px] mb-4 select-none">
-        <input id="printAnnotations" type="checkbox" checked class="w-4 h-4"> Include highlights, notes &amp; pen marks
-      </label>
-      <div id="printDeviceNote" class="text-[11px] opacity-45 mb-4 leading-snug">Printer, copies, and margins are chosen in the next step's system print dialog — the same one Edge, Chrome, or your OS normally shows.</div>
-      </div><!-- /printRangeSection -->
+      <details class="print-advanced mb-3">
+        <summary>Advanced options</summary>
+        <div class="text-[12px] font-semibold opacity-50 mb-1.5 mt-3">QUALITY</div>
+        <div class="flex gap-2 mb-3">
+          <button class="pill-btn !text-[12px] flex-1 print-q" data-q="auto">Auto</button>
+          <button class="pill-btn secondary !text-[12px] flex-1 print-q" data-q="standard">Standard</button>
+          <button class="pill-btn secondary !text-[12px] flex-1 print-q" data-q="high">High</button>
+        </div>
+        <div id="printDeviceSection" class="hidden mb-3">
+          <div class="text-[12px] font-semibold opacity-50 mb-1.5">DEVICE</div>
+          <select id="printDeviceSelect" class="w-full text-[13px] rounded-md bg-black/5 dark:bg-white/10 outline-none py-2 px-2">
+            <option value="">System default</option>
+          </select>
+        </div>
+        <label class="flex items-center gap-2 text-[13px] select-none">
+          <input id="printAnnotations" type="checkbox" checked class="w-4 h-4"> Include highlights, notes &amp; pen marks
+        </label>
+        <div id="printDeviceNote" class="text-[11px] opacity-45 mt-2 leading-snug">Printer, copies and margins are chosen in the system print dialog.</div>
+      </details>
 
-      <div id="printBrowserWarning" class="hidden text-[12px] leading-snug rounded-lg p-3 mb-4" style="background:rgba(255,170,0,.12);border:1px solid rgba(255,170,0,.35);">
-        <div class="font-bold mb-1">Heads up — settings above are skipped</div>
-        This hands the <b>original, unmodified</b> PDF to your default browser. Page range, paper size, orientation, colour and your highlights/notes/pen marks will <b>not</b> be applied — you'll print through the browser's own PDF viewer instead.
-      </div>
-
-      <div id="printProgress" class="hidden text-[12px] opacity-60 mb-3">Preparing pages…</div>
-      <!-- Sticky footer: the dialog body scrolls on short windows, and the
-           action row previously scrolled away with it, leaving the user on a
-           long form with no visible Print button. -->
+      <div id="printProgress" class="hidden text-[12px] opacity-60 mb-2">Preparing pages…</div>
       <div class="print-actions flex justify-end gap-2">
         <button class="pill-btn secondary !text-[13px]" data-action="cancel">Cancel</button>
         <button class="pill-btn secondary !text-[13px]" data-action="preview">Preview</button>
@@ -2508,271 +2484,230 @@ function openPrintDialog(presetFrom, presetTo){
     </div>
   `;
   document.body.appendChild(overlay);
-  let quality = 2.5;
-  let paperSize = 'fit';
-  let orientation = 'auto';
-  let colorMode = 'color';
-  function wireGroup(selector, dataAttr, onPick, initial){
+  overlay.querySelector('[data-action="cancel"]').onclick = ()=> overlay.remove();
+  overlay.addEventListener('click', e=>{ if(e.target === overlay) overlay.remove(); });
+
+  let scope = 'all', paperSize = 'fit', orientation = 'auto', colorMode = 'color', qualityMode = 'auto';
+  const rangeInput = overlay.querySelector('#printRangeInput');
+  const errEl      = overlay.querySelector('#printRangeError');
+  const readout    = overlay.querySelector('#printRangeReadout');
+  const longNote   = overlay.querySelector('#printLongNote');
+
+  function wireGroup(selector, attr, set){
     overlay.querySelectorAll(selector).forEach(b=>{
-      b.classList.toggle('secondary', b.dataset[dataAttr]!==initial);
       b.onclick = ()=>{
-        onPick(b.dataset[dataAttr]);
-        overlay.querySelectorAll(selector).forEach(x=> x.classList.toggle('secondary', x.dataset[dataAttr]!==b.dataset[dataAttr]));
+        set(b.dataset[attr]);
+        overlay.querySelectorAll(selector).forEach(x=> x.classList.toggle('secondary', x.dataset[attr] !== b.dataset[attr]));
+        onOptsChanged();
       };
     });
   }
-  wireGroup('.print-q','q', v=>quality=parseFloat(v), String(quality));
-  wireGroup('.print-paper','size', v=>paperSize=v, paperSize);
-  wireGroup('.print-orient','orient', v=>orientation=v, orientation);
-  wireGroup('.print-color','color', v=>colorMode=v, colorMode);
-  overlay.querySelector('[data-action="cancel"]').onclick = ()=> overlay.remove();
-  overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+  wireGroup('.print-paper',  'size',   v=> paperSize = v);
+  wireGroup('.print-orient', 'orient', v=> orientation = v);
+  wireGroup('.print-color',  'color',  v=> colorMode = v);
+  wireGroup('.print-q',      'q',      v=> qualityMode = v);
 
-  // ---------- Print method: in-app dialog vs. open original PDF in a new browser tab ----------
-  let printMethod = 'inapp';
-  const rangeSection = overlay.querySelector('#printRangeSection');
-  const browserWarning = overlay.querySelector('#printBrowserWarning');
-  const methodNote = overlay.querySelector('#printMethodNote');
-  const previewBtn = overlay.querySelector('[data-action="preview"]');
-  const goBtn = overlay.querySelector('[data-action="go"]');
-  function applyMethodUI(){
-    const isBrowser = printMethod === 'browser';
-    rangeSection.classList.toggle('hidden', isBrowser);
-    browserWarning.classList.toggle('hidden', !isBrowser);
-    previewBtn.classList.toggle('hidden', isBrowser);
-    methodNote.textContent = isBrowser
-      ? 'Opens the original file as-is in a new tab of your default browser, using its built-in PDF viewer to print.'
-      : 'Uses this dialog\'s settings, then hands off to your system\'s native print dialog.';
-    goBtn.textContent = isBrowser ? 'Open in Browser' : 'Print';
+  function currentPages(){
+    if(scope === 'all')     return Array.from({length: numPages}, (_,i)=> i+1);
+    if(scope === 'current') return (currentVisiblePage >= 1 && currentVisiblePage <= numPages) ? [currentVisiblePage] : [1];
+    return parsePageRanges(rangeInput.value, numPages);
   }
-  overlay.querySelectorAll('.print-method-card').forEach(b=>{
+  function refreshReadout(){
+    errEl.textContent = '';
+    rangeInput.classList.remove('input-invalid');
+    if(scope === 'custom'){
+      rangeInput.classList.remove('hidden');
+      const parsed = parsePageRanges(rangeInput.value, numPages);
+      if(!parsed){
+        errEl.textContent = rangeInput.value.trim()
+          ? 'Enter pages like 1-3, 7, 10-12 (1 to ' + numPages + ').'
+          : 'Enter a page range.';
+        rangeInput.classList.add('input-invalid');
+      }
+    } else {
+      rangeInput.classList.add('hidden');
+    }
+    const pages = currentPages();
+    if(pages){
+      readout.textContent = pages.length === 1 ? '1 page will print' : pages.length + ' pages will print';
+      longNote.classList.toggle('hidden', pages.length <= 120);
+    } else {
+      readout.textContent = '';
+      longNote.classList.add('hidden');
+    }
+  }
+  overlay.querySelectorAll('.print-scope').forEach(b=>{
     b.onclick = ()=>{
-      printMethod = b.dataset.method;
-      overlay.querySelectorAll('.print-method-card').forEach(x=> x.classList.toggle('selected', x.dataset.method===printMethod));
-      applyMethodUI();
+      scope = b.dataset.scope;
+      overlay.querySelectorAll('.print-scope').forEach(x=> x.classList.toggle('secondary', x.dataset.scope !== scope));
+      refreshReadout();
+      onOptsChanged();
     };
   });
-  applyMethodUI();
+  rangeInput.addEventListener('input', ()=>{ refreshReadout(); onOptsChanged(); });
 
-  // ---------- Device selection (only when the Electron bridge exists) ----------
-  // Regular web pages have no standard API to enumerate system printers, by
-  // design — this only lights up inside the WeBuild/Electron shell, which
-  // exposes window.webuildPrint via preload.js. In a plain browser tab this
-  // check simply fails and the dialog falls back to "System default", which
-  // still shows a full device picker of its own via window.print().
+  /* ---- live paper preview: mirrors paper, orientation & grayscale ---- */
+  const pvCanvas  = overlay.querySelector('#printPreviewCanvas');
+  const pvCaption = overlay.querySelector('#printPreviewCaption');
+  let pvTimer = null, pvToken = 0;
+
+  function paperAspect(){
+    const pages = currentPages() || [];
+    const first = pages[0] || 1;
+    let contentW = 595, contentH = 842;
+    const vp = pageViewports[first];
+    if(vp){ contentW = vp.width; contentH = vp.height; }
+    let landscape;
+    if(orientation === 'landscape') landscape = true;
+    else if(orientation === 'portrait') landscape = false;
+    else landscape = contentW > contentH;
+    if(paperSize !== 'fit' && PAPER_SIZES_PT[paperSize]){
+      const base = PAPER_SIZES_PT[paperSize];
+      return landscape ? base.h / base.w : base.w / base.h;
+    }
+    return landscape ? contentH / contentW : contentW / contentH;
+  }
+
+  async function renderPreview(){
+    const token = ++pvToken;
+    const pages = currentPages();
+    const first = pages && pages[0];
+    if(!first){ pvCaption.textContent = 'No pages selected'; return; }
+    pvCaption.textContent = 'Page ' + first + (colorMode === 'grayscale' ? ' · grayscale' : '');
+    const maxW = 340, maxH = 168;
+    const aspect = paperAspect();
+    let cw = maxH * aspect, ch = maxH;
+    if(cw > maxW){ cw = maxW; ch = maxW / aspect; }
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    pvCanvas.style.width = cw + 'px';
+    pvCanvas.style.height = ch + 'px';
+    pvCanvas.width = Math.max(1, Math.round(cw * dpr));
+    pvCanvas.height = Math.max(1, Math.round(ch * dpr));
+    const ctx = pvCanvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, cw, ch);
+    try{
+      const page = await pdfDoc.getPage(first);
+      if(token !== pvToken) return;
+      const rot = (page.rotate + (pageRotations[first] || 0)) % 360;
+      const base = page.getViewport({ scale: 1, rotation: rot });
+      const fit = Math.min((cw - 16) / base.width, (ch - 12) / base.height);
+      const vp = page.getViewport({ scale: fit, rotation: rot });
+      const tmp = document.createElement('canvas');
+      tmp.width = Math.max(1, Math.floor(vp.width));
+      tmp.height = Math.max(1, Math.floor(vp.height));
+      const tctx = tmp.getContext('2d');
+      if(colorMode === 'grayscale') tctx.filter = 'grayscale(1)';
+      await page.render({ canvasContext: tctx, viewport: vp }).promise;
+      if(token !== pvToken) return;
+      ctx.drawImage(tmp, (cw - vp.width) / 2, (ch - vp.height) / 2);
+      ctx.strokeStyle = 'rgba(0,0,0,.18)';
+      ctx.strokeRect(0.5, 0.5, cw - 1, ch - 1);
+      try{ page.cleanup(); }catch(e){}
+    }catch(err){
+      if(token === pvToken) pvCaption.textContent = 'Preview unavailable';
+    }
+  }
+  function onOptsChanged(){
+    clearTimeout(pvTimer);
+    pvTimer = setTimeout(renderPreview, 220);
+  }
+
+  /* ---- device picker (only exists inside the Electron shell) ---------- */
   const deviceSection = overlay.querySelector('#printDeviceSection');
-  const deviceSelect = overlay.querySelector('#printDeviceSelect');
-  const deviceNote = overlay.querySelector('#printDeviceNote');
-  // Bridge.getPrinters() resolves [] in a browser or on any IPC error, so
-  // there's no separate existence check and no unhandled rejection path —
-  // the dialog just keeps its "System default" behaviour.
+  const deviceSelect  = overlay.querySelector('#printDeviceSelect');
+  const deviceNote    = overlay.querySelector('#printDeviceNote');
   Bridge.getPrinters().then(printers=>{
     if(!overlay.isConnected) return;
     if(!printers.length){
-      // Electron bridge exists but reports zero printers — this is the
-      // "no printer connected" case you want surfaced directly instead of
-      // silently falling through to a native dialog that may also come up
-      // empty. Only fires inside the Electron shell; a plain browser tab
-      // still has no bridge at all and keeps the normal native-dialog path.
       if(Bridge.isElectron()){
         deviceSection.classList.remove('hidden');
-        deviceNote.textContent = 'No printers found on this system. Connect or install a printer, then reopen this dialog.';
-        deviceNote.style.color = 'var(--danger, #e5484d)';
+        deviceNote.textContent = 'No printers found on this system. Connect a printer, then reopen this dialog.';
         deviceSelect.disabled = true;
       }
       return;
     }
     deviceSection.classList.remove('hidden');
-    deviceNote.textContent = 'Pick a device above to print directly to it, or leave "System default" to choose in a native dialog.';
     printers.forEach(p=>{
       const opt = document.createElement('option');
       opt.value = p.name || p.deviceName || '';
-      opt.textContent = p.displayName || p.name || 'Unnamed printer';
-      if(p.isDefault) opt.textContent += ' (default)';
+      opt.textContent = (p.displayName || p.name || 'Unnamed printer') + (p.isDefault ? ' (default)' : '');
       deviceSelect.appendChild(opt);
     });
   });
 
-  const fromEl = overlay.querySelector('#printFrom');
-  const toEl = overlay.querySelector('#printTo');
-  const errEl = overlay.querySelector('#printRangeError');
-
-  function validateRange(){
-    const fromRaw = fromEl.value.trim();
-    const toRaw = toEl.value.trim();
-    const from = parseInt(fromRaw);
-    const to = parseInt(toRaw);
-    fromEl.classList.remove('input-invalid');
-    toEl.classList.remove('input-invalid');
-
-    if(fromRaw === '' || isNaN(from) || toRaw === '' || isNaN(to)){
-      errEl.textContent = 'Enter valid page numbers.';
-      if(fromRaw === '' || isNaN(from)) fromEl.classList.add('input-invalid');
-      if(toRaw === '' || isNaN(to)) toEl.classList.add('input-invalid');
-      return null;
-    }
-    if(from < 1 || from > numPages){
-      errEl.textContent = `Start page must be between 1 and ${numPages}.`;
-      fromEl.classList.add('input-invalid');
-      return null;
-    }
-    if(to < 1 || to > numPages){
-      errEl.textContent = `End page must be between 1 and ${numPages}.`;
-      toEl.classList.add('input-invalid');
-      return null;
-    }
-    if(from > to){
-      errEl.textContent = 'Start page cannot be greater than end page.';
-      fromEl.classList.add('input-invalid');
-      toEl.classList.add('input-invalid');
-      return null;
-    }
-    errEl.textContent = '';
-    return {from, to};
+  function resolveQuality(n){
+    if(qualityMode === 'high') return 2.5;
+    if(qualityMode === 'standard') return 1.5;
+    return n <= 20 ? 2.5 : 1.5;   // Auto: short jobs get the sharpest raster
   }
-  [fromEl, toEl].forEach(el=> el.addEventListener('input', validateRange));
+
+  function armProgress(){
+    const progressEl = overlay.querySelector('#printProgress');
+    progressEl.classList.remove('hidden');
+    const goBtn = overlay.querySelector('[data-action="go"]');
+    const pvBtn = overlay.querySelector('[data-action="preview"]');
+    goBtn.style.pointerEvents = 'none'; goBtn.style.opacity = '.5';
+    pvBtn.style.pointerEvents = 'none'; pvBtn.style.opacity = '.5';
+    overlay.querySelector('[data-action="cancel"]').onclick = ()=>{
+      cancelPrintBuild(); clearPrintArea(); overlay.remove(); showToast('Print cancelled');
+    };
+    return progressEl;
+  }
 
   overlay.querySelector('[data-action="go"]').onclick = async ()=>{
-    if(printMethod === 'browser'){
-      // Explicit confirmation: this path throws away every setting in the
-      // dialog and prints the untouched original, which is destructive to
-      // the user's intent if they'd just finished configuring a range or
-      // annotations. The inline banner is easy to skim past, so make it a
-      // decision they have to actually make.
-      const annotCount = annotations.length;
-      const ok = await warnDialog({
-        title: 'Open in your browser?',
-        body: 'Meridian PDF will hand the <b>original, unmodified</b> PDF to your default browser and you\'ll print from its own viewer.'
-            + '<ul style="margin:8px 0 0 16px;padding:0;list-style:disc;line-height:1.6;">'
-            + '<li>Page range, paper size, orientation and colour settings are <b>ignored</b></li>'
-            + (annotCount ? `<li>Your <b>${annotCount}</b> highlight${annotCount>1?'s':''}/note${annotCount>1?'s':''}/pen mark${annotCount>1?'s':''} will <b>not</b> be printed</li>` : '<li>Annotations are not included</li>')
-            + '<li>Pop-ups must be allowed for this app</li>'
-            + '</ul>',
-        confirmLabel: 'Open in browser',
-        cancelLabel: 'Go back'
-      });
-      if(!ok) return; // keep the print dialog open so they can switch method
-      overlay.remove();
-      openPdfInBrowserTab();
-      return;
-    }
-    const range = validateRange();
-    if(!range) return; // inline error is already shown — no native alert, no silent clamping
+    const pages = currentPages();
+    if(!pages){ refreshReadout(); return; }
     if(Bridge.isElectron() && deviceSelect.disabled){
-      // No printers were found when this dialog opened (see the
-      // getPrinters().then above) — stop here with a clear message rather
-      // than handing off to a native dialog that has nothing to show either.
       showToast('No printer connected. Connect a printer and try again.', 'error');
       return;
     }
-    if(!await confirmLargeJob(range, quality)) return;
+    const quality = resolveQuality(pages.length);
     const includeAnnots = overlay.querySelector('#printAnnotations').checked;
-    const chosenDevice = deviceSelect.value; // '' means "System default"
-    const progressEl = overlay.querySelector('#printProgress');
-    progressEl.classList.remove('hidden');
-    const cancelBtn = overlay.querySelector('[data-action="cancel"]');
-    const goBtnEl = overlay.querySelector('[data-action="go"]');
-    goBtnEl.style.pointerEvents = 'none';
-    goBtnEl.style.opacity = '.5';
-    // Turn Cancel into a live abort for the build rather than leaving the
-    // user staring at a frozen dialog for the length of a long job.
-    cancelBtn.textContent = 'Cancel';
-    cancelBtn.onclick = ()=>{ cancelPrintBuild(); clearPrintArea(); overlay.remove(); showToast('Print cancelled'); };
-    await renderPrintFrame(range.from, range.to, quality, includeAnnots, progressEl, {paperSize, orientation, colorMode, device: chosenDevice});
+    const progressEl = armProgress();
+    await renderPrintFrame(pages, quality, includeAnnots, progressEl, {paperSize, orientation, colorMode, device: deviceSelect.value});
     overlay.remove();
   };
   overlay.querySelector('[data-action="preview"]').onclick = async ()=>{
-    const range = validateRange();
-    if(!range) return;
-    if(!await confirmLargeJob(range, quality)) return;
+    const pages = currentPages();
+    if(!pages){ refreshReadout(); return; }
+    const quality = resolveQuality(pages.length);
     const includeAnnots = overlay.querySelector('#printAnnotations').checked;
-    const chosenDevice = deviceSelect.value;
-    const deviceLabel = chosenDevice ? (deviceSelect.selectedOptions[0] && deviceSelect.selectedOptions[0].textContent) : '';
+    const chosen = deviceSelect.value;
+    const label = chosen && deviceSelect.selectedOptions[0] ? deviceSelect.selectedOptions[0].textContent : '';
     overlay.remove();
-    await openPrintPreview(range.from, range.to, quality, includeAnnots, {paperSize, orientation, colorMode, device: chosenDevice}, deviceLabel);
+    await openPrintPreview(pages, quality, includeAnnots, {paperSize, orientation, colorMode, device: chosen}, label);
   };
-}
 
-// Rasterising a very large range at High quality is genuinely slow and
-// memory-hungry. Rather than letting the user unknowingly kick off a job
-// that takes minutes (and previously froze the window), warn once past a
-// sensible threshold and offer to drop to Standard quality.
-async function confirmLargeJob(range, quality){
-  const count = range.to - range.from + 1;
-  if(count <= 60) return true;
-  const heavy = quality > 2;
-  const ok = await warnDialog({
-    title: `Prepare ${count} pages?`,
-    body: `Meridian PDF renders each page to an image before printing, so a range this long takes a while and uses a lot of memory.`
-        + (heavy ? `<br><br>You've selected <b>High</b> quality. <b>Standard</b> is usually indistinguishable in print and is roughly three times faster here.` : '')
-        + `<br><br>You can cancel at any point while it's preparing.`,
-    confirmLabel: 'Continue',
-    cancelLabel: 'Go back'
-  });
-  return ok;
-}
-
-// ---------- Print method B: open the original PDF in a new browser tab ----------
-// Opens the file using the OS's default/installed browser (i.e. the same
-// browser context this app is already running in) so the user can print
-// via that browser's own native PDF viewer and print controls — separate
-// from the in-app rasterized print path above, and untouched by the
-// page-range/paper/color settings since it hands off the original bytes.
-async function openPdfInBrowserTab(){
-  if(!currentFileBlob){ showToast('Open a PDF first', 'error'); return; }
-
-  // Inside Electron, window.open() with a blob: URL just spawns another
-  // Electron BrowserWindow (or is blocked outright) — it does NOT reach the
-  // user's installed browser, which is what "open in my browser" means and
-  // is why this option appeared to do nothing in the packaged app. Ask the
-  // shell to hand a real path to the OS instead. A blob: URL is meaningless
-  // to a separate browser process, so if we don't already have an on-disk
-  // path we write the bytes to a temp file first.
-  if(Bridge.isElectron()){
-    try{
-      let target = currentFilePath;
-      if(!target){
-        const buf = await currentFileBlob.arrayBuffer();
-        target = await Bridge.writeTempFile(currentFileName || 'document.pdf', new Uint8Array(buf));
-      }
-      if(target){
-        const ok = await Bridge.openExternal(target);
-        if(ok){
-          showToast('Opened in your browser — use its Print button there');
-          return;
-        }
-      }
-    }catch(err){
-      console.warn('Shell hand-off failed, falling back to window.open', err);
-    }
-    // Fall through to the web path below rather than dead-ending: on an
-    // older preload build without openExternal/writeTempFile this at least
-    // still shows the document somewhere the user can print from.
+  /* Context-menu presets ("print current page") prefill a custom range. */
+  if(presetFrom && presetTo){
+    scope = 'custom';
+    rangeInput.value = (presetFrom === presetTo) ? String(presetFrom) : presetFrom + '-' + presetTo;
+    overlay.querySelectorAll('.print-scope').forEach(x=> x.classList.toggle('secondary', x.dataset.scope !== 'custom'));
   }
-
-  let url = null;
-  try{
-    const blob = currentFileBlob.type === 'application/pdf'
-      ? currentFileBlob
-      : new Blob([currentFileBlob], {type:'application/pdf'});
-    url = URL.createObjectURL(blob);
-    const win = window.open(url, '_blank', 'noopener');
-    if(!win){
-      showToast('Pop-up blocked — allow pop-ups for this app and try again', 'error');
-      URL.revokeObjectURL(url);
-      return;
-    }
-    showToast('Opened in a new browser tab — use its Print button there');
-    // Revoke well after the new tab has had time to load the blob; revoking
-    // immediately would break the tab before it finishes fetching the data.
-    setTimeout(()=> URL.revokeObjectURL(url), 60000);
-  }catch(err){
-    console.error('Could not open PDF in browser tab', err);
-    if(url) URL.revokeObjectURL(url);
-    showToast('Could not open the file in a new tab: ' + (err && err.message ? err.message : 'unknown error'), 'error');
-  }
+  refreshReadout();
+  renderPreview();
 }
 
+/* Parses "1-3, 7, 10-12" into a sorted, de-duplicated page list.
+   Returns null for anything malformed or out of bounds. */
+function parsePageRanges(spec, max){
+  const s = String(spec || '').trim();
+  if(!s) return null;
+  const out = new Set();
+  for(const part of s.split(/[,;\s]+/)){
+    if(!part) continue;
+    const m = part.match(/^(\d{1,5})(?:\s*[-–]\s*(\d{1,5}))?$/);
+    if(!m) return null;
+    const a = parseInt(m[1], 10);
+    const b = (m[2] !== undefined) ? parseInt(m[2], 10) : a;
+    if(!Number.isFinite(a) || !Number.isFinite(b)) return null;
+    if(a < 1 || b < 1 || a > max || b > max || a > b) return null;
+    for(let i = a; i <= b; i++) out.add(i);
+  }
+  return out.size ? [...out].sort((x, y)=> x - y) : null;
+}
 // Paper dimensions in PDF points (1/72"), portrait orientation
 const PAPER_SIZES_PT = {
   a4: {w: 595.28, h: 841.89},
@@ -2834,10 +2769,14 @@ async function buildPrintPages(from, to, quality, includeAnnots, progressEl, opt
   const printArea = document.getElementById('printArea');
   printArea.innerHTML = '';
 
-  const total = to - from + 1;
+  // v5: `from` may be an explicit page list (custom ranges like "1-3, 7").
+  const __pages = Array.isArray(from)
+    ? from.slice()
+    : (()=>{ const a=[]; for(let i=from;i<=to;i++) a.push(i); return a; })();
+  const total = __pages.length;
   let done = 0;
 
-  for(let i=from; i<=to; i++){
+  for(const i of __pages){
     if(token !== printBuildToken) return {cancelled:true, built:done};
     if(progressEl){
       const pct = Math.round((done / total) * 100);
@@ -3250,7 +3189,7 @@ async function prepareForNativePrintDialog(container){
 // first — a genuine preview of what will be printed, not a simulated one,
 // since it's the identical image data either path ends up sending.
 async function openPrintPreview(from, to, quality, includeAnnots, opts, deviceLabel){
-  const total = to - from + 1;
+  const total = Array.isArray(from) ? from.length : (to - from + 1);
   const modal = document.createElement('div');
   modal.className = 'app-modal fixed inset-0 z-[110] flex flex-col';
   // Fully opaque. At 94% alpha the bright app chrome underneath (toolbar
@@ -9610,11 +9549,7 @@ function applyAppSettings(){
   applyDockOpacity(appSettings.dockOpacity);
   applyDockCorners(appSettings.dockCorners);
   applyDockEffect(appSettings.dockEffect);
-  applyIconTheme(appSettings.iconTheme);
-  applyIconMotion(appSettings.iconMotion);
   applyAccentColor(appSettings.accentColor);
-  applyIconCustomColor(appSettings.iconColor, true);
-  applyIconCustomGradient(appSettings.iconGradientFrom, appSettings.iconGradientTo, true);
   applyGesturesSetting(appSettings.gesturesEnabled);
   applyMinimalDock(appSettings.minimalDock);
   applyDisableContextMenu(appSettings.disableContextMenu);
@@ -11307,127 +11242,27 @@ function setIconTheme(theme){applyIconTheme(theme);saveAppSettings();}
 function applyIconMotion(motion){const valid=['off','gentle','playful'];if(!valid.includes(motion))motion='gentle';appSettings.iconMotion=motion;valid.forEach(x=>document.body.classList.toggle('icon-motion-'+x,x===motion));markAppIcons();}
 function setIconMotion(motion){applyIconMotion(motion);saveAppSettings();}
 function setAppearanceMode(mode){if(mode==='system'){appSettings.dark=null;const on=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;isDark=!!on;document.documentElement.classList.toggle('dark',isDark);document.body.classList.toggle('bg-[#1c1c1e]',isDark);document.body.classList.toggle('text-white',isDark);saveAppSettings();}else setDark(mode==='dark');}
-const ICON_COLOR_SWATCHES=['#0a84ff','#7c3aed','#ff375f','#ff9500','#34c759','#00c7be','#5e5ce6','#ff2d55','#1d1d1f','#8e8e93','#d4d4d6','#ffffff'];
-function iconColorSwatchHTML(current){
-  // "Auto" swatch first (reverts to the theme/accent colour), then the
-  // palette, then the platform colour picker as a fallback — on Android the
-  // native picker can be fiddly, so the swatches are the primary control.
-  const autoSel = !validAccentColor(current);
-  const swatches = ICON_COLOR_SWATCHES.map(c=>{
-    const sel = current === c;
-    const style = c==='#ffffff'
-      ? 'background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.18),inset 0 0 0 1px rgba(0,0,0,.14);'
-      : `background:${c};`;
-    return `<button class="icon-swatch${sel?' selected':''}" data-icon-color="${c}" style="${style}" title="${c}" aria-label="Icon colour ${c}"></button>`;
-  }).join('');
-  return `
-    <div class="icon-color-swatches">
-      <button class="icon-swatch${autoSel?' selected':''}" data-icon-color="auto" title="Follow theme / app accent"
-        style="background:conic-gradient(#0a84ff,#ff375f,#ff9500,#34c759,#0a84ff);" aria-label="Automatic icon colour"></button>
-      ${swatches}
-    </div>
-    <div class="icon-custom-row">
-      <input type="color" data-icon-color-picker value="${validAccentColor(current)?current:'#0a84ff'}">
-      <span class="flex-1">Custom colour…</span>
-      <code data-icon-color-label class="text-[11px] opacity-55">${validAccentColor(current)?current.toUpperCase():'AUTO'}</code>
-      <button class="text-[11px] font-bold" style="color:var(--accent)" data-icon-color-reset>Reset</button>
-    </div>`;
-}
 function renderThemeSystemSettings(overlay){
   const panel=overlay.querySelector('[data-panel="appearance"]');if(!panel)return;
   const section=document.createElement('div');
-  const icon={unfilled:['Unfilled','M12 5v14M5 12h14'],filled:['Filled','M4 5h16M12 5v14M7 19h10'],linear:['Linear','M4 12h16M12 4v16'],gradient:['Gradient','M12 3l2.8 5.7L21 9.6l-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z'],colourful:['Colourful','M4 4h16v16H4zM8 8h8v8H8z']};
-  const iconChoices=Object.entries(icon).map(([key,[label,path]])=>`<button class="theme-icon-choice${appSettings.iconTheme===key?' selected':''}" data-icon-theme="${key}" title="${label}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="${path}"/></svg><span>${label}</span></button>`).join('');
   const cards=(group,items,current)=>items.map(([value,title,sub])=>`<button class="print-method-card${current===value?' selected':''}" data-theme-group="${group}" data-theme-value="${value}"><div class="pm-body"><div class="pm-title">${title}</div><div class="pm-sub">${sub}</div></div><div class="pm-check"></div></button>`).join('');
   const appearance=appSettings.dark===null?'system':(appSettings.dark?'dark':'light');
-  const gFrom=validAccentColor(appSettings.iconGradientFrom)?appSettings.iconGradientFrom:'#0a84ff';
-  const gTo=validAccentColor(appSettings.iconGradientTo)?appSettings.iconGradientTo:color_mix_fallback(gFrom);
   section.innerHTML=`
-    <div class="settings-section-label">Icon theme</div>
-    <div class="theme-icon-grid">${iconChoices}</div>
-
-    <div class="settings-section-label">Icon colour</div>
-    <div class="text-[12px] opacity-60 leading-snug mb-1">Tint every toolbar icon with your own colour — or leave it on <b>Auto</b> to follow the theme and app accent.</div>
-    ${iconColorSwatchHTML(appSettings.iconColor)}
-
-    <div class="settings-section-label">Custom gradient</div>
-    <div class="text-[12px] opacity-60 leading-snug mb-1">Used by the <b>Gradient</b> icon theme. Pick two colours, or tap <b>Reset</b> to use the app accent.</div>
-    <div class="gradient-preview" id="iconGradientPreview" style="background:linear-gradient(120deg,${gFrom},${gTo});"></div>
-    <div class="text-[11px] font-bold uppercase tracking-wide opacity-45 mt-3 mb-1">From</div>
-    <div class="icon-custom-row" data-gradient-row="from">
-      <input type="color" data-grad-from value="${gFrom}">
-      <span class="flex-1">Start colour</span>
-      <code data-grad-from-label class="text-[11px] opacity-55">${gFrom.toUpperCase()}</code>
-    </div>
-    <div class="text-[11px] font-bold uppercase tracking-wide opacity-45 mt-2 mb-1">To</div>
-    <div class="icon-custom-row" data-gradient-row="to">
-      <input type="color" data-grad-to value="${gTo}">
-      <span class="flex-1">End colour</span>
-      <code data-grad-to-label class="text-[11px] opacity-55">${gTo.toUpperCase()}</code>
-    </div>
-    <button class="text-[11px] font-bold mb-4" style="color:var(--accent)" data-grad-reset>Reset gradient to app accent</button>
-
-    <div class="settings-section-label">Icon animation</div>
-    <div class="print-method-list mb-4">${cards('motion',[['off','Off','Still icons; best for minimal motion.'],['gentle','Gentle','Soft floating icon movement.'],['playful','Playful','Occasional lively icon motion.']],appSettings.iconMotion)}</div>
-
     <div class="settings-section-label">Appearance</div>
     <div class="print-method-list mb-4">${cards('appearance',[['system','System','Follow this device.'],['light','Light','Always use light appearance.'],['dark','Dark','Always use dark appearance.']],appearance)}</div>`;
   panel.appendChild(section);
-
-  const syncGradientUI=()=>{
-    const from=validAccentColor(appSettings.iconGradientFrom)?appSettings.iconGradientFrom:'#0a84ff';
-    const to=validAccentColor(appSettings.iconGradientTo)?appSettings.iconGradientTo:color_mix_fallback(from);
-    const pv=section.querySelector('#iconGradientPreview');
-    if(pv) pv.style.background=`linear-gradient(120deg,${from},${to})`;
-    const fi=section.querySelector('[data-grad-from]'),ti=section.querySelector('[data-grad-to]');
-    if(fi) fi.value=from; if(ti) ti.value=to;
-    const fl=section.querySelector('[data-grad-from-label]'),tl=section.querySelector('[data-grad-to-label]');
-    if(fl) fl.textContent=from.toUpperCase(); if(tl) tl.textContent=to.toUpperCase();
-  };
-
-  section.querySelectorAll('[data-icon-theme]').forEach(b=>b.onclick=()=>{
-    const v=b.dataset.iconTheme;setIconTheme(v);
-    section.querySelectorAll('[data-icon-theme]').forEach(x=>x.classList.toggle('selected',x===b));
-    showToast('Icon theme saved');
-  });
   section.querySelectorAll('[data-theme-group]').forEach(b=>b.onclick=()=>{
-    const g=b.dataset.themeGroup,v=b.dataset.themeValue;
-    if(g==='motion')setIconMotion(v);else setAppearanceMode(v);
-    section.querySelectorAll(`[data-theme-group="${g}"]`).forEach(x=>x.classList.toggle('selected',x===b));
-    showToast(g==='motion'?'Icon animation saved':'Appearance saved');
+    const v=b.dataset.themeValue;
+    setAppearanceMode(v);
+    section.querySelectorAll('[data-theme-group="appearance"]').forEach(x=>x.classList.toggle('selected',x===b));
+    showToast('Appearance saved');
   });
-  // Icon colour: swatches, native picker fallback, reset.
-  const iconLabel=section.querySelector('[data-icon-color-label]'),iconPicker=section.querySelector('[data-icon-color-picker]');
-  const syncIconUI=c=>{
-    section.querySelectorAll('[data-icon-color]').forEach(x=>x.classList.toggle('selected',x.dataset.iconColor===(validAccentColor(c)?c:'auto')));
-    if(iconLabel) iconLabel.textContent=validAccentColor(c)?c.toUpperCase():'AUTO';
-    if(iconPicker && validAccentColor(c)) iconPicker.value=c;
-  };
-  section.querySelectorAll('[data-icon-color]').forEach(b=>b.onclick=()=>{
-    const v=b.dataset.iconColor;
-    if(v==='auto'){ applyIconCustomColor(null); syncIconUI(null); showToast('Icon colour follows theme'); }
-    else{ applyIconCustomColor(v); syncIconUI(v); showToast('Icon colour saved'); }
-  });
-  if(iconPicker) iconPicker.addEventListener('input',()=>{ const c=iconPicker.value.toLowerCase(); applyIconCustomColor(c); syncIconUI(c); });
-  const iconReset=section.querySelector('[data-icon-color-reset]');
-  if(iconReset) iconReset.onclick=()=>{ applyIconCustomColor(null); syncIconUI(null); showToast('Icon colour reset to theme'); };
-  // Gradient: live preview + save on change.
-  const gradFrom=section.querySelector('[data-grad-from]'),gradTo=section.querySelector('[data-grad-to]');
-  let gradDebounce=null;
-  const commitGradient=()=>{
-    clearTimeout(gradDebounce);
-    gradDebounce=setTimeout(()=>{ setIconCustomGradient(gradFrom.value, gradTo.value); syncGradientUI(); }, 120);
-  };
-  if(gradFrom) gradFrom.addEventListener('input',commitGradient);
-  if(gradTo) gradTo.addEventListener('input',commitGradient);
-  const gradReset=section.querySelector('[data-grad-reset]');
-  if(gradReset) gradReset.onclick=()=>{ setIconCustomGradient(null,null); syncGradientUI(); showToast('Icon gradient reset to app accent'); };
 }
 // Dynamic menus/modals add icons after startup; mark them without retaining
 // a costly observer over PDF page content. The event runs after each click.
 document.addEventListener('click',()=>setTimeout(markAppIcons,0));
 if(window.matchMedia){const mq=window.matchMedia('(prefers-color-scheme: dark)');const sync=()=>{if(appSettings.dark===null)setAppearanceMode('system');};try{mq.addEventListener('change',sync);}catch(e){mq.addListener(sync);}}
-setTimeout(()=>{applyIconTheme(appSettings.iconTheme);applyIconMotion(appSettings.iconMotion);},0);
+
 
 
 /* ======================================================================
@@ -13547,6 +13382,454 @@ async function createBlankPdfTab(){
   // A document arrived while this file was loading (OS launch bridge) —
   // those paths manage their own tabs.
 })();
+
+</script>
+<style id="meridian-refine">
+/* ---- v5 input smoothness: live highlighter + instant eraser ---------- */
+body.tool-highlight .textLayer,
+body.tool-highlight .ocr-layer{
+  cursor:crosshair !important;
+  user-select:none !important;
+  -webkit-user-select:none !important;
+}
+body.live-highlighting{ cursor:crosshair; }
+body.live-highlighting .highlight-mark,
+body.live-highlighting .na-popup{ pointer-events:none !important; }
+.live-highlight-layer{
+  position:absolute; inset:0; pointer-events:none; overflow:visible; z-index:7;
+}
+.live-highlight-rect{
+  position:absolute; mix-blend-mode:multiply; border-radius:2px; opacity:.85;
+}
+/* Non-pen marks vanish the moment the eraser touches them. */
+.erase-pending.erase-now{ opacity:0 !important; filter:none; }
+
+/* ---- Print Center ----------------------------------------------------- */
+.print-live-preview{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:rgba(0,0,0,.04); border:1px solid var(--border);
+  border-radius:12px; padding:12px 10px 8px; min-height:130px;
+}
+.dark .print-live-preview{ background:rgba(255,255,255,.05); }
+#printPreviewCanvas{
+  display:block; background:#fff; border-radius:2px;
+  box-shadow:0 3px 12px rgba(0,0,0,.18);
+}
+.plp-caption{
+  font-size:10.5px; font-weight:700; letter-spacing:.6px; text-transform:uppercase;
+  opacity:.45; margin-top:8px;
+}
+.print-advanced{
+  border:1px solid var(--border); border-radius:10px; padding:0 12px;
+}
+.print-advanced summary{
+  cursor:pointer; font-size:12.5px; font-weight:700; opacity:.65;
+  padding:10px 0; list-style:none; display:flex; align-items:center; gap:6px;
+}
+.print-advanced summary::-webkit-details-marker{ display:none; }
+.print-advanced summary::after{
+  content:'▸'; margin-left:auto; opacity:.5; transition:transform .15s ease;
+}
+.print-advanced[open] summary::after{ transform:rotate(90deg); }
+.print-advanced[open] summary{ border-bottom:1px solid var(--border); }
+
+</style>
+<script>
+/* ======================================================================
+   Meridian PDF 5.0 — input smoothness layer
+   ----------------------------------------------------------------------
+   Rebuilt for Edge-PDF-grade feel:
+
+   HIGHLIGHT — live drag highlighting. With the highlight tool active,
+   dragging across text now highlights WHILE you drag (caret-geometry
+   based), exactly like the Edge PDF viewer — no "select first, commit
+   on release" waiting, no native selection handles fighting the drag.
+   The committed highlight is created on release from the live rects.
+
+   ERASER — instant, frame-batched erase:
+     • marks under the eraser disappear IMMEDIATELY during the drag
+       (previously they only faded and were deleted on release),
+     • pointermove storms are coalesced to one hit-test pass per frame,
+     • per-drag geometry cache removes the per-sample PDF→pixel
+       conversions that made fast drags stutter on long strokes.
+   ====================================================================== */
+
+/* ---- setTool: add the highlighter's body flags ---------------------- */
+(function(){
+  const orig = setTool;
+  setTool = function(tool){
+    orig(tool);
+    document.body.classList.toggle('tool-highlight', tool === 'highlight');
+    // The highlighter drags like a drawing tool on touch (no page scroll,
+    // no native selection) — include it in the drawing-tool class.
+    document.body.classList.toggle('drawing-tool',
+      tool === 'pen' || tool === 'eraser' || tool === 'highlight');
+  };
+})();
+
+/* ---- Live highlighter ------------------------------------------------ */
+function attachLiveHighlight(wrap, pageNum){
+  if(wrap._liveHlBound) return;
+  wrap._liveHlBound = true;
+
+  let active = false, anchor = null, rafId = 0, pendingPt = null;
+  let layer = null, capturedId = null, wrapRect = null;
+  let lastRects = [];
+
+  function caretRangeAt(cx, cy){
+    // Clamp to the page box: a drag that leaves the page extends the
+    // highlight to the first/last line instead of jumping to another page.
+    const x = Math.max(wrapRect.left + 2, Math.min(cx, wrapRect.right - 2));
+    const y = Math.max(wrapRect.top + 2, Math.min(cy, wrapRect.bottom - 2));
+    try{
+      let r = null;
+      if(document.caretRangeFromPoint) r = document.caretRangeFromPoint(x, y);
+      else if(document.caretPositionFromPoint){
+        const c = document.caretPositionFromPoint(x, y);
+        if(c && c.offsetNode){
+          r = document.createRange();
+          r.setStart(c.offsetNode, c.offset);
+        }
+      }
+      if(!r || !r.startContainer) return null;
+      // The caret must sit in real text of THIS page's layers — a caret on
+      // the page canvas or a chrome element would produce junk rects.
+      const el = (r.startContainer.nodeType === 3)
+        ? r.startContainer.parentElement : r.startContainer;
+      if(!el || !el.closest || !el.closest('.textLayer, .ocr-layer')) return null;
+      return r;
+    }catch(e){ return null; }
+  }
+
+  function comparePts(nodeA, offA, nodeB, offB){
+    if(nodeA === nodeB) return offA < offB ? -1 : (offA > offB ? 1 : 0);
+    const pos = nodeA.compareDocumentPosition(nodeB);
+    if(pos & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
+    if(pos & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+    return 0;
+  }
+
+  function paint(){
+    rafId = 0;
+    if(!active || !pendingPt) return;
+    const cr = caretRangeAt(pendingPt.x, pendingPt.y);
+    pendingPt = null;
+    if(!cr) return;
+
+    const r = document.createRange();
+    const cmp = comparePts(anchor.node, anchor.off, cr.startContainer, cr.startOffset);
+    try{
+      if(cmp <= 0){ r.setStart(anchor.node, anchor.off); r.setEnd(cr.startContainer, cr.startOffset); }
+      else        { r.setStart(cr.startContainer, cr.startOffset); r.setEnd(anchor.node, anchor.off); }
+    }catch(e){ return; }
+
+    const vpRects = [...r.getClientRects()].filter(rc => rc.width > 1 && rc.height > 2);
+    layer.innerHTML = '';
+    lastRects = [];
+    vpRects.forEach(rc => {
+      const d = document.createElement('div');
+      d.className = 'live-highlight-rect';
+      d.style.left   = (rc.left - wrapRect.left) + 'px';
+      d.style.top    = (rc.top  - wrapRect.top) + 'px';
+      d.style.width  = rc.width + 'px';
+      d.style.height = rc.height + 'px';
+      d.style.background = currentColor;
+      layer.appendChild(d);
+      lastRects.push({
+        x: rc.left - wrapRect.left, y: rc.top - wrapRect.top,
+        w: rc.width, h: rc.height
+      });
+    });
+    wrap._liveHlText = r.toString();
+  }
+
+  function schedule(){ if(!rafId) rafId = requestAnimationFrame(paint); }
+
+  function start(e){
+    if(currentTool !== 'highlight' || redactMode) return;
+    if(e.button !== undefined && e.button !== 0) return;
+    if(!appSettings.gesturesEnabled || multiTouchActive || gestureMode === 'pinch' || touchCount > 1) return;
+    wrapRect = wrap.getBoundingClientRect();
+    if(e.clientX < wrapRect.left || e.clientX > wrapRect.right ||
+       e.clientY < wrapRect.top  || e.clientY > wrapRect.bottom) return;
+    // A press a few pixels left of the text (still on its line) should work:
+    // probe the exact point first, then nudge right before giving up.
+    let cr = caretRangeAt(e.clientX, e.clientY);
+    if(!cr) cr = caretRangeAt(e.clientX + 8, e.clientY);
+    if(!cr) cr = caretRangeAt(e.clientX + 16, e.clientY);
+    if(!cr) return;                       // started off-text — nothing to do
+    active = true;
+    document.body.classList.add('live-highlighting');
+    layer = document.createElement('div');
+    layer.className = 'live-highlight-layer';
+    wrap.appendChild(layer);
+    anchor = { node: cr.startContainer, off: cr.startOffset };
+    pendingPt = { x: e.clientX, y: e.clientY };
+    schedule();
+    if(e.pointerId !== undefined){
+      try{ wrap.setPointerCapture(e.pointerId); capturedId = e.pointerId; }catch(err){}
+    }
+    e.preventDefault();
+  }
+  function move(e){
+    if(!active) return;
+    if(touchCount > 1 || gestureMode === 'pinch'){ cancel(); return; }
+    pendingPt = { x: e.clientX, y: e.clientY };
+    schedule();
+    e.preventDefault();
+  }
+  function end(){
+    if(!active) return;
+    // Flush the last queued position so a fast drag commits its final state.
+    if(pendingPt) paint();
+    active = false;
+    if(rafId){ cancelAnimationFrame(rafId); rafId = 0; }
+    if(capturedId !== null){ try{ wrap.releasePointerCapture(capturedId); }catch(err){} capturedId = null; }
+    document.body.classList.remove('live-highlighting');
+    const rects = lastRects;
+    const text = String(wrap._liveHlText || '').trim();
+    wrap._liveHlText = null;
+    if(layer){ layer.remove(); layer = null; }
+    lastRects = [];
+    if(!rects.length || !text) return;
+    createHighlight(pageNum, rects, text);
+    vibrate(10);
+  }
+  function cancel(){
+    if(!active) return;
+    active = false;
+    if(rafId){ cancelAnimationFrame(rafId); rafId = 0; }
+    document.body.classList.remove('live-highlighting');
+    if(layer){ layer.remove(); layer = null; }
+    lastRects = []; wrap._liveHlText = null;
+    if(capturedId !== null){ try{ wrap.releasePointerCapture(capturedId); }catch(err){} capturedId = null; }
+  }
+
+  // Native selection must never start while the highlighter is armed —
+  // the drag is ours, a browser selection would only fight it.
+  wrap.addEventListener('mousedown', e => { if(currentTool === 'highlight') e.preventDefault(); }, true);
+  wrap.addEventListener('pointerdown', start, true);
+  wrap.addEventListener('pointermove', move, true);
+  wrap.addEventListener('pointerup', end, true);
+  wrap.addEventListener('pointercancel', cancel, true);
+}
+
+/* Wrap the per-page event binder so every rendered page also gets the
+   live highlighter (the original binder is untouched). */
+(function(){
+  const orig = attachPageEvents;
+  attachPageEvents = function(wrap, pageNum){
+    orig(wrap, pageNum);
+    attachLiveHighlight(wrap, pageNum);
+  };
+})();
+
+/* ---- Eraser: instant, cached, frame-batched -------------------------- */
+function attachEraser(wrap, pageNum){
+  let pending = new Set();        // pen strokes touched this drag (split on release)
+  let removedNow = new Set();     // non-pen marks visually erased immediately
+  let last = null, capturedPointer = null;
+  let penHitRanges = new Map();
+  const geomCache = new Map();    // ann.id -> pixel-space geometry for this drag
+  let queuedPt = null, rafId = 0;
+
+  function localPoint(e){
+    const r = wrap.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+
+  /* Per-drag geometry cache: every annotation is converted to page-local
+     pixel space at most once per drag, instead of on every interpolated
+     hit-test sample. This was the hot loop that made erasing stutter. */
+  function geomFor(ann){
+    let g = geomCache.get(ann.id);
+    if(g) return g;
+    const vp = pageViewports[pageNum];
+    if(!vp) return null;
+    const s = currentScale || 1;
+    if(ann.type === 'pen'){
+      if(!ann.points || ann.points.length < 2){ g = { skip:true }; }
+      else g = { pts: ann.points.map(pt => {
+        const p = vp.convertToViewportPoint(pt.px, pt.py);
+        return { x: p[0]*s, y: p[1]*s };
+      })};
+    } else if(ann.type === 'highlight'){
+      g = { rects: (ann.rects || []).map(r => {
+        if(r && typeof r.x1 === 'number'){
+          const px = pdfRectToPixels(vp, r);
+          return { x: px.x*s, y: px.y*s, w: px.w*s, h: px.h*s };
+        }
+        return { x: r.x*vp.width*s, y: r.y*vp.height*s, w: r.w*vp.width*s, h: r.h*vp.height*s };
+      })};
+    } else if(ann.type === 'text'){
+      if(typeof ann.px !== 'number'){ g = { skip:true }; }
+      else {
+        const p = pdfPointToPixels(vp, { px: ann.px, py: ann.py });
+        const fs = Math.max(8, Math.min(72, Number(ann.fontSize) || 16)) * s;
+        const charW = Math.max(18, String(ann.text || 'Text').split('\n').reduce((m,l)=>Math.max(m,l.length),0) * fs * .56);
+        const lines = Math.max(1, String(ann.text || 'Text').split('\n').length);
+        g = { box: { x: p.x*s, y: p.y*s - fs*1.12, w: charW, h: fs*1.28*lines } };
+      }
+    } else if(ann.type === 'note'){
+      let nx, ny;
+      if(typeof ann.px === 'number'){
+        const p = pdfPointToPixels(vp, { px: ann.px, py: ann.py });
+        nx = p.x*s; ny = p.y*s;
+      } else if(typeof ann.x === 'number'){
+        nx = ann.x*vp.width*s; ny = ann.y*vp.height*s;
+      } else { g = { skip:true }; return g; }
+      g = { pin: { x: nx - 4 + 13, y: ny - 22 + 13 } };
+    } else g = { skip:true };
+    geomCache.set(ann.id, g);
+    return g;
+  }
+
+  function hitsAt(x, y, r){
+    const out = [];
+    for(const ann of annotations){
+      if(ann.page !== pageNum) continue;
+      if(removedNow.has(ann.id)) continue;
+      if(eraserMode === 'pen' && ann.type !== 'pen') continue;
+      const g = geomFor(ann);
+      if(!g || g.skip) continue;
+      if(g.pts){
+        const tol = r + ((ann.width || 3) * (currentScale || 1)) / 2;
+        let touched = false;
+        for(let i = 1; i < g.pts.length; i++){
+          if(distToSegment({x, y}, g.pts[i-1], g.pts[i]) <= tol){
+            touched = true;
+            if(!penHitRanges.has(ann.id)) penHitRanges.set(ann.id, new Set());
+            const set = penHitRanges.get(ann.id);
+            set.add(i-1); set.add(i);
+          }
+        }
+        if(touched) out.push(ann);
+      } else if(g.rects){
+        for(const rc of g.rects){ if(circleHitsRect(x, y, r, rc)){ out.push(ann); break; } }
+      } else if(g.box){
+        if(circleHitsRect(x, y, r, g.box)) out.push(ann);
+      } else if(g.pin){
+        if(Math.hypot(x - g.pin.x, y - g.pin.y) <= r + 13) out.push(ann);
+      }
+    }
+    return out;
+  }
+
+  function markPending(list){
+    list.forEach(ann => {
+      if(ann.type === 'pen'){
+        if(pending.has(ann.id)) return;
+        pending.add(ann.id);
+        wrap.querySelectorAll(`[data-annot-id="${ann.id}"]`).forEach(el => el.classList.add('erase-pending'));
+      } else {
+        if(removedNow.has(ann.id)) return;
+        removedNow.add(ann.id);
+        // Disappear RIGHT NOW — the release-time commit hides it from the
+        // data model, the eye should never see a lag.
+        wrap.querySelectorAll(`[data-annot-id="${ann.id}"]`).forEach(el => {
+          el.classList.add('erase-pending', 'erase-now');
+          if(el.style) el.style.pointerEvents = 'none';
+        });
+      }
+    });
+  }
+
+  function sampleChain(p){
+    const r = eraserSize / 2;
+    if(last){
+      // Interpolate between processed samples so a fast drag cannot skip
+      // over thin marks between two pointermove events.
+      const dist = Math.hypot(p.x - last.x, p.y - last.y);
+      const steps = Math.min(16, Math.floor(dist / Math.max(3, r * 0.6)));
+      for(let i = 1; i <= steps; i++){
+        const t = i / (steps + 1);
+        markPending(hitsAt(last.x + (p.x - last.x)*t, last.y + (p.y - last.y)*t, r));
+      }
+    }
+    markPending(hitsAt(p.x, p.y, r));
+    last = p;
+  }
+
+  function queueSample(p){
+    queuedPt = p;
+    if(!rafId){
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        const pt = queuedPt; queuedPt = null;
+        if(pt && eraserActive) sampleChain(pt);
+      });
+    }
+  }
+
+  function onDown(e){
+    if(currentTool !== 'eraser' || redactMode) return;
+    if(e.button !== undefined && e.button !== 0) return;
+    if(!appSettings.gesturesEnabled || multiTouchActive || gestureMode === 'pinch' || touchCount > 1) return;
+    e.preventDefault();
+    eraserActive = true;
+    activeEraserCancel = cancelErase;
+    activeEraserEnd = onUp;
+    pending = new Set(); removedNow = new Set();
+    last = null; penHitRanges = new Map(); geomCache.clear();
+    if(e.pointerType === 'touch') moveEraserCursor(e.clientX, e.clientY);
+    try{ wrap.setPointerCapture(e.pointerId); capturedPointer = e.pointerId; }catch(err){}
+    // Sample the press point synchronously — a quick scrub (down→up inside
+    // one frame) must still erase what it touched.
+    sampleChain(localPoint(e));
+  }
+  function onMove(e){
+    if(!eraserActive || currentTool !== 'eraser') return;
+    if(touchCount > 1 || gestureMode === 'pinch'){ cancelErase(); return; }
+    e.preventDefault();
+    if(e.pointerType === 'touch') moveEraserCursor(e.clientX, e.clientY);
+    queueSample(localPoint(e));
+  }
+  function onUp(e){
+    if(!eraserActive) return;
+    eraserActive = false;
+    activeEraserCancel = null; activeEraserEnd = null;
+    // Flush any position that never got its frame — the commit must see it.
+    if(queuedPt){
+      const pt = queuedPt; queuedPt = null;
+      if(rafId){ cancelAnimationFrame(rafId); rafId = 0; }
+      sampleChain(pt);
+    }
+    last = null;
+    if(capturedPointer !== null){ try{ wrap.releasePointerCapture(capturedPointer); }catch(err){} capturedPointer = null; }
+    if(e && e.pointerType === 'touch') hideEraserCursor();
+    const ids = [...new Set([...removedNow, ...pending])];
+    if(!ids.length) return;
+    const ranges = penHitRanges;
+    removedNow = new Set(); pending = new Set(); penHitRanges = new Map();
+    // One commit, one undo entry — including the marks that already
+    // vanished visually mid-drag.
+    eraseAnnotations(ids, pageNum, ranges);
+  }
+  function cancelErase(){
+    if(!eraserActive) return;
+    eraserActive = false;
+    activeEraserCancel = null; activeEraserEnd = null;
+    last = null;
+    if(rafId){ cancelAnimationFrame(rafId); rafId = 0; }
+    queuedPt = null;
+    if(capturedPointer !== null){ try{ wrap.releasePointerCapture(capturedPointer); }catch(err){} capturedPointer = null; }
+    wrap.querySelectorAll('.erase-pending').forEach(el => {
+      el.classList.remove('erase-pending', 'erase-now');
+      el.style.pointerEvents = '';
+    });
+    pending = new Set(); removedNow = new Set(); penHitRanges = new Map();
+    hideEraserCursor();
+  }
+
+  wrap.addEventListener('pointerdown', onDown);
+  wrap.addEventListener('pointermove', onMove);
+  wrap.addEventListener('pointerup', onUp);
+  wrap.addEventListener('pointercancel', cancelErase);
+}
+/* Window-level safety net: if pointer capture failed (old engines), a
+   drag that ends outside the page must still commit. */
+let activeEraserEnd = null;
+window.addEventListener('pointerup', () => { if(activeEraserEnd) activeEraserEnd(); });
 
 </script>
 </body>

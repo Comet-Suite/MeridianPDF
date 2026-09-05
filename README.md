@@ -31,7 +31,9 @@ The entire engine runs client-side (pdf.js + pdf-lib), so it works from a local 
 | 🏠 **Home & Welcome page** | Land on a real Home screen — open a file, start a blank PDF, or jump back into a recent document. |
 | 🗂 **Multi-tab documents** | Open as many PDFs as you like, each in its own tab, just like Acrobat. Switching tabs preserves each document's page, zoom, annotations, bookmarks and OCR state. Middle-click or ✕ to close. |
 | 🎨 **New identity** | A crisp new meridian logo marks the app everywhere — the name appears only in **About**, where it belongs. |
-| ⚡ **Same engine, version 5** | Everything from earlier releases is still on board. |
+| ⚡ **Edge-smooth markup** | Highlights apply while you drag; the eraser is instant and buttery, with frame-batched hit-testing. |
+| 🖨 **Print Center** | Live paper preview, page ranges (`1-3, 7`), All/Current/Custom scopes, auto quality. |
+| 🧹 **Decluttered Settings** | Icon-customisation extras removed — Appearance keeps the essentials. |
 
 ## Screenshots
 
@@ -53,12 +55,12 @@ The entire engine runs client-side (pdf.js + pdf-lib), so it works from a local 
 ## Everything on board
 
 - **Read** — continuous scroll, thumbnails, bookmarks, outline, per-document reading position, fit-to-width, pinch zoom
-- **Annotate** — text highlights, sticky notes with comments, freehand pen, eraser, editable text overlays, custom colors
+- **Annotate** — live drag highlighting (Edge-style), sticky notes with comments, freehand pen, instant eraser, editable text overlays, custom colors
 - **OCR** — on-device text recognition for scanned pages, with a selectable text layer and searchable OCR PDF export
 - **Organise** — rotate / reorder / delete / insert / extract pages; merge and split
 - **Secure** — permanent redaction, document signing with cryptographic certificates, password-protected file support
 - **Export** — annotated PDF (readable in Acrobat/Preview), flattened PDF, Word, PowerPoint, Excel, plain text, PNG archive
-- **Print** — full print preview with paper-size-aware layout
+- **Print** — a Print Center with live paper preview, custom page ranges, and a full print preview with paper-size-aware layout
 - **Comfort** — light/dark themes, accent colors, dockable toolbars, focus mode, keyboard shortcuts
 
 ## Run it

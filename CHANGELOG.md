@@ -22,6 +22,21 @@ The biggest release yet.
 - Zoom controls stay out of the way while no document is open.
 - Cleaner, quieter UI copy throughout.
 
+### Refined in the same release
+- **Print Center** — a redesigned print dialog with a live paper preview that
+  mirrors paper size / orientation / grayscale in real time, All / Current /
+  Custom page scopes (ranges like `1-3, 7, 10-12`), and an Auto quality mode.
+- **Edge-smooth input tools** —
+  - Highlighting now applies **while you drag** (live caret-geometry
+    highlighting, exactly like the Edge PDF viewer) instead of committing
+    only after release.
+  - The eraser deletes marks **instantly as it passes over them**, with
+    frame-batched hit-testing and a per-drag geometry cache, so long
+    documents scrub smoothly.
+- **Settings slimmed down** — icon theme / icon colour / icon animation
+  customisation removed; Appearance now holds the essentials (accent colour,
+  light/dark/system).
+
 ### Under the hood
 - `loadPdf()` accepts a per-tab resume state and aborts stale loads when the
   user switches tabs mid-parse.

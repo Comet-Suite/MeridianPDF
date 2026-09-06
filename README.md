@@ -28,13 +28,15 @@ The entire engine runs client-side (pdf.js + pdf-lib), so it works from a local 
 
 | | |
 |---|---|
-| 🏠 **Home & Welcome page** | Land on a real Home screen — open a file, start a blank PDF, or jump back into a recent document. |
-| 🗂 **Multi-tab documents** | Open as many PDFs as you like, each in its own tab, just like Acrobat. Switching tabs preserves each document's page, zoom, annotations, bookmarks and OCR state. Middle-click or ✕ to close. |
-| 🎨 **New identity** | A crisp new meridian logo marks the app everywhere — the name appears only in **About**, where it belongs. |
-| ⚡ **Edge-smooth markup** | Highlights apply while you drag; the eraser is instant and buttery, with frame-batched hit-testing. |
-| 🖨 **Print Center** | Live paper preview, page ranges (`1-3, 7`), All/Current/Custom scopes, auto quality. |
-| 🧹 **Decluttered Settings** | Icon-customisation extras removed — Appearance keeps the essentials. |
-
+| 🖊 **Direct Ink pen** | Strokes swell and taper with speed and stylus pressure — real vector ink instead of thick pixels, crisp at any zoom and in exports. |
+| ✋ **Camera gestures** | Zoom, turn pages or scroll hands-free with a regular webcam. Calibrates to your hand and lighting, processed entirely on-device — no frame ever leaves the browser. Off by default. |
+| ✏️ **Ink-to-shape** | Rough line, rectangle, triangle or ellipse → snaps into the perfect primitive. Freehand writing is never touched. |
+| ⌨️ **Command palette** | `Ctrl`/`Cmd` + `K` fuzzy-searches every action, any open tab, and page numbers — type `12`, hit Enter, you're on page 12. |
+| 🔎 **Edge-style Find** | All matches marked as you type, Match-case, ↑/↓ stepping, and a results drawer with snippets. |
+| 🗂 **Annotations panel** | Counts, Highlights/Notes/Ink filters and one-click delete in the sidebar. |
+| 🔍 **Sharper OCR** | Contrast enhancement + Otsu binarisation for faint scans, with per-page confidence. |
+| 🎛 **Meridian Console identity** | Gradient actions, deeper glass, floating tab cards, a new logo and a bespoke duoline icon set. |
+| 🏠 **Home & multi-tab workspace** | A real Home screen with recent documents, and any number of PDFs open at once — state travels with every tab. |
 ## Screenshots
 
 **Home — every document in focus**
@@ -55,13 +57,14 @@ The entire engine runs client-side (pdf.js + pdf-lib), so it works from a local 
 ## Everything on board
 
 - **Read** — continuous scroll, thumbnails, bookmarks, outline, per-document reading position, fit-to-width, pinch zoom
-- **Annotate** — live drag highlighting (Edge-style), sticky notes with comments, freehand pen, instant eraser, editable text overlays, custom colors
-- **OCR** — on-device text recognition for scanned pages, with a selectable text layer and searchable OCR PDF export
+- **Annotate** — live drag highlighting (Edge-style), sticky notes with comments, freehand pressure pen (Direct Ink), instant eraser, editable text overlays, custom colors
+- **OCR** — on-device text recognition for scanned pages, with contrast enhancement, a selectable text layer and searchable OCR PDF export
+- **Hands-free** — optional webcam gestures (Meridian Motion): pinch to zoom, swipe to turn pages, palm to scroll — computed on-device, never uploaded
 - **Organise** — rotate / reorder / delete / insert / extract pages; merge and split
 - **Secure** — permanent redaction, document signing with cryptographic certificates, password-protected file support
 - **Export** — annotated PDF (readable in Acrobat/Preview), flattened PDF, Word, PowerPoint, Excel, plain text, PNG archive
 - **Print** — a Print Center with live paper preview, custom page ranges, and a full print preview with paper-size-aware layout
-- **Comfort** — light/dark themes, accent colors, dockable toolbars, focus mode, keyboard shortcuts
+- **Comfort** — light/dark themes, accent colors, dockable toolbars, focus mode, keyboard shortcuts, `Ctrl`/`Cmd` + `K` command palette
 
 ## Run it
 
@@ -73,11 +76,11 @@ The entire engine runs client-side (pdf.js + pdf-lib), so it works from a local 
 
 ## Privacy
 
-Meridian PDF has **no analytics, no telemetry, no network calls of its own**. Documents, annotations, bookmarks and OCR text are stored only in your browser's local storage, keyed per file. Nothing is ever uploaded.
+Meridian PDF has **no analytics, no telemetry, no network calls of its own**. Documents, annotations, bookmarks and OCR text are stored only in your browser's local storage, keyed per file. Nothing is ever uploaded. Camera gestures are strictly opt-in, and video frames are analysed in your browser's memory only — no frame is ever stored or transmitted.
 
 ## Tech
 
-A single-file app built on [pdf.js](https://github.com/mozilla/pdf.js) (rendering) and [pdf-lib](https://github.com/Hopding/pdf-lib) (writing), with Tailwind for styling. The v5 tab engine snapshots per-document state on switch, so memory stays flat no matter how many tabs are open.
+A single-file app built on [pdf.js](https://github.com/mozilla/pdf.js) (rendering) and [pdf-lib](https://github.com/Hopding/pdf-lib) (writing), with Tailwind for styling. The tab engine snapshots per-document state on switch, so memory stays flat no matter how many tabs are open; 5.0 adds a self-contained computer-vision layer (adaptive skin-tone blob tracking at 160×120, ~11 fps) that keeps camera gestures entirely off the network. See [OFFLINE.md](OFFLINE.md) for how the CDN engines could be bundled for a fully-offline single file.
 
 ## License
 
